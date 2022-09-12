@@ -9,7 +9,7 @@ USE staff_db;
     -- name: VARCHAR(30) to hold department name
 
 CREATE TABLE department (
-id INT PRIMARY KEY NOT NULL,
+id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
 name VARCHAR(30),
 );
 
@@ -20,10 +20,12 @@ name VARCHAR(30),
     -- department_id: INT to hold reference to the department role belongs to
 
 CREATE TABLE role (
-id INT PRIMARY KEY,
+id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
 title VARCHAR(30),
 salary DECIMAL,
 department_id INT,
+FOREIGN KEY (department_id)
+REFERENCES department(id)
 );
 
 -- employee -->
@@ -34,9 +36,11 @@ department_id INT,
     -- manager_id: INT to hold reference to another employee that is manager of the current employee (null if the employee has no manager)
 
 CREATE TABLE employee (
-id INT PRIMARY KEY,
+id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
 first_name VARCHAR(30),
 last_name VARCHAR(30),
 role_id: INT,
 manager_id: INT,
+FOREIGN KEY (role_id)
+REFERENCES roles(id)
 );
