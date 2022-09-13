@@ -2,14 +2,14 @@ USE staff_db;
 
 -- department id order = 1, 2, 3, 4
 INSERT INTO department (name)
-VALUES (Engineering),
-        (Finance),
-        (Legal),
-        (Sales);
+VALUES ("Engineering"),
+        ("Finance"),
+        ("Legal"),
+        ("Sales");
 
 -- role id order = 1, 2, 3, 4, 5, 6, 7, 8
 INSERT INTO role (title, salary, department_id)
-VALUES ("Engineer Manager", 150000, 1)
+VALUES ("Engineer Manager", 150000, 1),
         ("Software Engineer", 120000, 1),
         ("Account Manager", 160000, 2),
         ("Accountant", 125000, 2),
