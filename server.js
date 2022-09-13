@@ -155,7 +155,7 @@ const addRole = () => {
       db.query(
         `INSERT INTO role(title, salary, department_id) VALUES ("${answers.roleName}", ${answers.roleSalary}, ${departmentID})`
       );
-      console.log("New role was added.");
+      console.log("New role added.");
 
       //go back to the main menu options
       menuSelect();
@@ -218,16 +218,16 @@ const addEmployee = () => {
       );
 
       // if new employee is manager - make manager_id null
-      if (employeeManger === "null") {
+      if (answers.employeeManger === "null") {
         db.query(
           `INSERT INTO employee(first_name, last_name, role_id, manager_id) VALUES ("${answers.employeeFirstName}", "${answers.employeeLastName}", ${roleID}, null)`
         );
       } else {
         db.query(
-          `INSERT INTO employee(first_name, last_name, role_id, manager_id) VALUES ("${answers.employeeFirstName}", "${answers.employeeLastName}", ${roleID}, ${roleID})`
+          `INSERT INTO employee(first_name, last_name, role_id, manager_id) VALUES ("${answers.employeeFirstName}", "${answers.employeeLastName}", ${roleID}, ${employeeManagerID})`
         );
       }
-      console.log("New employee was added.");
+      console.log("New employee added.");
 
       //go back to main menu options
       menuSelect();
@@ -240,8 +240,47 @@ const addEmployee = () => {
 //UPDATING TABLE DATA:
 
 //updating employee role
+const updateRole = () => {
+  db.query("SELECT title FROM role")
+    .then((roleTitles) => {
+      let firstName = db.query("SELECT first_name FROM employee");
+      return roleTitles, firstName;
+    })
+    .then((roleTitles, firstName) => {
+      inquirer
+        .createPromptModule([
+          {
+            name: "employeeFirstName",
+            message:
+              "What is the first name of the employee you would like to update?",
+            type: "list",
+            choices: firstName.first_name,
+          },
+          {
+            name: "updatedRole",
+            message: "What is the new role of this employee?",
+            type: "list",
+            choices: roleTitles.title,
+          },
+        ])
+        .then((answers) => {
+          const newRoleId = db.query(
+            `SELECT id FROM role WHERE title = "${answers.updatedRole}"`
+          );
+          return answers, newRoleId;
+        })
+        .then((answers, newRoleId) => {
+          db.query(
+            `UPDATE employee SET role_id = ${newRoleId.id} WHERE first_name = ${answers.employeeFirstName}`
+          );
+          console.log("Employee role updated.");
+        });
 
-// WHEN I choose to add an employee
-// THEN I am prompted to enter the employee’s first name, last name, role, and manager, and that employee is added to the database
-// WHEN I choose to update an employee role
-// THEN I am prompted to select an employee to update and their new role and this information is updated in the database
+      //go back to main menu options
+      menuSelect();
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+  
+};
