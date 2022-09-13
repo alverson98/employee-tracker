@@ -102,23 +102,68 @@ const addDepartment = () => {
       },
     ])
     .then((response) => {
+      //adding the new department name to the department table
       db.query(
         `INSERT INTO department(name) VALUES ("${response.departmentName}")`
       );
+      console.log("New department added.");
       menuSelect();
+    })
+    .catch((err) => {
+      console.log(err);
     });
 };
 
 //adding role
-const addRole = () => 
+const addRole = () => {
+  //getting all of the department data
+  db.query("SELECT name FROM department")
+    .then((departmentNames) => {
+      inquirer.createPromptModule([
+        {
+          name: "roleName",
+          message: "What is the name of the Role you would like to add?",
+          type: "input",
+        },
+        {
+          name: "roleSalary",
+          message: "What is the salary of this new role?",
+          type: "input",
+        },
+        {
+          name: "department",
+          message: "What department does this new role belong to?",
+          type: "list",
+          choices: departmentNames,
+        },
+      ]);
+    })
+    .then((answers) => {
+      //getting the id for the department
+      let departmentID = db.query(
+        `SELECT id FROM department WHERE name = ${answers.department}`
+      );
+
+      //returning answers to the questions and the id data from the department table
+      return answers, departmentID;
+    })
+    .then((answers, departmentID) => {
+      db.query(
+        `INSERT INTO role(title, salary, department_id) VALUES ("${answers.roleName}", ${answers.roleSalary}, ${departmentID})`
+      );
+      console.log("New role was added.");
+      menuSelect();
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+};
 
 //adding employee
 
 //UPDATING TABLE DATA:
 
 //updating employee role
-
-
 
 // WHEN I choose to add a role
 // THEN I am prompted to enter the name, salary, and department for the role and that role is added to the database
