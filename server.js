@@ -15,19 +15,61 @@ const db = mysql.createConnection(
 );
 
 // User action prompts
-//ask what the user wants to do (view, add, update)
-// .then() - run function based on user choice
+const menuSelect = () => {
+  inquirer
+    .createPromptModule({
+      name: "menuChoice",
+      type: "list",
+      choices: [
+        "View Departments",
+        "Add Department",
+        "View Roles",
+        "Add Role",
+        "View Employees",
+        "Add Employee",
+        "Update Employee Role",
+        "Done",
+      ],
+    })
+    .then((response) => {
+      //switch statement to call functions based on what user selected
+      switch (response.menuChoice) {
+        case "View Departments":
+          showDepartment();
+          break;
+        case "Add Department":
+          addDepartment();
+          break;
+        case "View Roles":
+          showRole();
+          break;
+        case "Add Role":
+          addRole();
+          break;
+        case "View Employees":
+          showEmployee();
+          break;
+        case "Add Employee":
+          addEmployee();
+          break;
+        case "Update Employee Role":
+          updateRole();
+        case "Done":
+          process.exit(0);
+      }
+    });
+};
 
 // QUERYING THE DATABASE:
 
-// department table
+// view department table
 const showDepartment = () =>
   db.query("SELECT * FROM department", (err, results) => {
     console.table(results);
     menuSelect();
   });
 
-// role table
+// view role table
 const showRole = () =>
   db.query(
     "SELECT role.id, role.title, department.name AS department, role.salary FROM role LEFT JOIN department ON role.department_id = department.id",
@@ -37,7 +79,7 @@ const showRole = () =>
     }
   );
 
-// employee table
+// view employee table
 const showEmployee = () =>
   db.query(
     "SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name AS department, employee.salary, manager.first_name AS manager FROM employee LEFT JOIN role  ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id LEFT JOIN employee manager ON manager.id = employee.manager_id",
