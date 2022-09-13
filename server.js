@@ -16,48 +16,48 @@ const db = mysql.createConnection(
 
 // User action prompts
 const menuSelect = () => {
-  inquirer
-    .createPromptModule({
-      name: "menuChoice",
-      type: "list",
-      choices: [
-        "View Departments",
-        "Add Department",
-        "View Roles",
-        "Add Role",
-        "View Employees",
-        "Add Employee",
-        "Update Employee Role",
-        "Done",
-      ],
-    })
-    .then((response) => {
-      //switch statement to call functions based on what user selected
-      switch (response.menuChoice) {
-        case "View Departments":
-          showDepartment();
-          break;
-        case "Add Department":
-          addDepartment();
-          break;
-        case "View Roles":
-          showRole();
-          break;
-        case "Add Role":
-          addRole();
-          break;
-        case "View Employees":
-          showEmployee();
-          break;
-        case "Add Employee":
-          addEmployee();
-          break;
-        case "Update Employee Role":
-          updateRole();
-        case "Done":
-          process.exit(0);
-      }
-    });
+  const menuOptions = inquirer.createPromptModule();
+
+  menuOptions({
+    name: "menuChoice",
+    type: "list",
+    choices: [
+      "View Departments",
+      "Add Department",
+      "View Roles",
+      "Add Role",
+      "View Employees",
+      "Add Employee",
+      "Update Employee Role",
+      "Done",
+    ],
+  }).then((response) => {
+    //switch statement to call functions based on what user selected
+    switch (response.menuChoice) {
+      case "View Departments":
+        showDepartment();
+        break;
+      case "Add Department":
+        addDepartment();
+        break;
+      case "View Roles":
+        showRole();
+        break;
+      case "Add Role":
+        addRole();
+        break;
+      case "View Employees":
+        showEmployee();
+        break;
+      case "Add Employee":
+        addEmployee();
+        break;
+      case "Update Employee Role":
+        updateRole();
+      case "Done":
+        process.exit(0);
+    }
+  });
 };
 
 // QUERYING THE DATABASE: view requested table(s) & data
@@ -93,14 +93,15 @@ const showEmployee = () =>
 
 // adding department
 const addDepartment = () => {
-  inquirer
-    .createPromptModule([
-      {
-        name: "departmentName",
-        message: "What is the name of the Department you would like to add?",
-        type: "input",
-      },
-    ])
+  const newDepartmentQuestions = inquirer.createPromptModule();
+
+  newDepartmentQuestions([
+    {
+      name: "departmentName",
+      message: "What is the name of the Department you would like to add?",
+      type: "input",
+    },
+  ])
     .then((response) => {
       //adding the new department name to the department table
       db.query(
@@ -122,7 +123,9 @@ const addRole = () => {
   db.query("SELECT name FROM department")
     //prompting user with questions to create new role
     .then((departmentNames) => {
-      inquirer.createPromptModule([
+      const newRoleQuestions = inquirer.createPromptModule();
+
+      newRoleQuestions([
         {
           name: "roleName",
           message: "What is the name of the Role you would like to add?",
@@ -176,7 +179,9 @@ const addEmployee = () => {
       return roleTitles, managerNames;
     })
     .then((roleTitles, managerNames) => {
-      inquirer.createPromptModule([
+      const newEmployeeQuestions = inquirer.createPromptModule();
+
+      newEmployeeQuestions(
         {
           name: "employeeFirstName",
           message: "What is the first name of the new employee?",
@@ -199,8 +204,8 @@ const addEmployee = () => {
             "Who is the new employee's manager? (Select 'null' if the new employee is a manager).",
           type: "list",
           choices: [...managerNames.first_name, "null"],
-        },
-      ]);
+        }
+      );
     })
     .then((answers) => {
       //getting the id for the new employee role
@@ -247,22 +252,23 @@ const updateRole = () => {
       return roleTitles, firstName;
     })
     .then((roleTitles, firstName) => {
-      inquirer
-        .createPromptModule([
-          {
-            name: "employeeFirstName",
-            message:
-              "What is the first name of the employee you would like to update?",
-            type: "list",
-            choices: firstName.first_name,
-          },
-          {
-            name: "updatedRole",
-            message: "What is the new role of this employee?",
-            type: "list",
-            choices: roleTitles.title,
-          },
-        ])
+      const updateEmployeeQuestions = inquirer.createPromptModule();
+
+      updateEmployeeQuestions([
+        {
+          name: "employeeFirstName",
+          message:
+            "What is the first name of the employee you would like to update?",
+          type: "list",
+          choices: firstName.first_name,
+        },
+        {
+          name: "updatedRole",
+          message: "What is the new role of this employee?",
+          type: "list",
+          choices: roleTitles.title,
+        },
+      ])
         .then((answers) => {
           const newRoleId = db.query(
             `SELECT id FROM role WHERE title = "${answers.updatedRole}"`
@@ -282,5 +288,6 @@ const updateRole = () => {
     .catch((err) => {
       console.log(err);
     });
-  
 };
+
+menuSelect();
