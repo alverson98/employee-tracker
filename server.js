@@ -107,6 +107,8 @@ const addDepartment = () => {
         `INSERT INTO department(name) VALUES ("${response.departmentName}")`
       );
       console.log("New department added.");
+
+      //go back to the main menu options
       menuSelect();
     })
     .catch((err) => {
@@ -118,6 +120,7 @@ const addDepartment = () => {
 const addRole = () => {
   //getting all of the department data
   db.query("SELECT name FROM department")
+    //prompting user with questions to create new role
     .then((departmentNames) => {
       inquirer.createPromptModule([
         {
@@ -134,24 +137,27 @@ const addRole = () => {
           name: "department",
           message: "What department does this new role belong to?",
           type: "list",
-          choices: departmentNames,
+          choices: departmentNames.name,
         },
       ]);
     })
     .then((answers) => {
-      //getting the id for the department
+      //getting the id for the department the new role belongs to
       let departmentID = db.query(
         `SELECT id FROM department WHERE name = ${answers.department}`
       );
 
-      //returning answers to the questions and the id data from the department table
+      //returning answers to the questions and the id data from the new role's department
       return answers, departmentID;
     })
     .then((answers, departmentID) => {
+      //adding the new role to the role table
       db.query(
         `INSERT INTO role(title, salary, department_id) VALUES ("${answers.roleName}", ${answers.roleSalary}, ${departmentID})`
       );
       console.log("New role was added.");
+
+      //go back to the main menu options
       menuSelect();
     })
     .catch((err) => {
@@ -160,13 +166,81 @@ const addRole = () => {
 };
 
 //adding employee
+const addEmployee = () => {
+  //getting all of the role titles
+  db.query("SELECT title FROM role")
+    .then((roleTitles) => {
+      let managerNames = db.query(
+        "SELECT first_name FROM employee where manager_id IS NULL"
+      );
+      return roleTitles, managerNames;
+    })
+    .then((roleTitles, managerNames) => {
+      inquirer.createPromptModule([
+        {
+          name: "employeeFirstName",
+          message: "What is the first name of the new employee?",
+          type: "input",
+        },
+        {
+          name: "employeeLastName",
+          message: "What is the last name of the new employee?",
+          type: "input",
+        },
+        {
+          name: "employeeRole",
+          message: "What is the new employee's role?",
+          type: "list",
+          choices: roleTitles.title,
+        },
+        {
+          name: "employeeManager",
+          message:
+            "Who is the new employee's manager? (Select 'null' if the new employee is a manager).",
+          type: "list",
+          choices: [...managerNames.first_name, "null"],
+        },
+      ]);
+    })
+    .then((answers) => {
+      //getting the id for the new employee role
+      let roleID = db.query(
+        `SELECT id FROM role WHERE title = ${answers.employeeRole}`
+      );
+
+      //returning answers to the questions and the id data from the role table
+      return answers, roleID;
+    })
+    .then((answers, roleID) => {
+      // getting id for the new employee's manager
+      let employeeManagerID = db.query(
+        `SELECT id FROM employee WHERE first_name = ${answers.employeeManager}`
+      );
+
+      // if new employee is manager - make manager_id null
+      if (employeeManger === "null") {
+        db.query(
+          `INSERT INTO employee(first_name, last_name, role_id, manager_id) VALUES ("${answers.employeeFirstName}", "${answers.employeeLastName}", ${roleID}, null)`
+        );
+      } else {
+        db.query(
+          `INSERT INTO employee(first_name, last_name, role_id, manager_id) VALUES ("${answers.employeeFirstName}", "${answers.employeeLastName}", ${roleID}, ${roleID})`
+        );
+      }
+      console.log("New employee was added.");
+
+      //go back to main menu options
+      menuSelect();
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+};
 
 //UPDATING TABLE DATA:
 
 //updating employee role
 
-// WHEN I choose to add a role
-// THEN I am prompted to enter the name, salary, and department for the role and that role is added to the database
 // WHEN I choose to add an employee
 // THEN I am prompted to enter the employee’s first name, last name, role, and manager, and that employee is added to the database
 // WHEN I choose to update an employee role
