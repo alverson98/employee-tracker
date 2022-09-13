@@ -15,30 +15,37 @@ const db = mysql.createConnection(
 );
 
 // User action prompts
-//ask what the user wants to do (view, add)
+//ask what the user wants to do (view, add, update)
 // .then() - run function based on user choice
 
 // QUERYING THE DATABASE:
 
 // department table
-//want to see department id & name
-db.query('', function (err, results) {
-    console.log(results);
-})
+const showDepartment = () =>
+  db.query("SELECT * FROM department", (err, results) => {
+    console.table(results);
+    menuSelect();
+  });
 
 // role table
-//want to see role id, title, department name, & salary
-db.query('', function (err, results) {
-    console.log(results);
-}) 
+const showRole = () =>
+  db.query(
+    "SELECT role.id, role.title, department.name AS department, role.salary FROM role LEFT JOIN department ON role.department_id = department.id",
+    (err, results) => {
+      console.table(results);
+      menuSelect();
+    }
+  );
 
 // employee table
-//want to see employee id, first name, last name, role title, department name, salary, and manager name
-db.query('', function (err, results) {
-    console.log(results);
-})
-
-
+const showEmployee = () =>
+  db.query(
+    "SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name AS department, employee.salary, manager.first_name AS manager FROM employee LEFT JOIN role  ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id LEFT JOIN employee manager ON manager.id = employee.manager_id",
+    (err, results) => {
+      console.table(results);
+      menuSelect();
+    }
+  );
 
 // GIVEN a command-line application that accepts user input
 // WHEN I start the application
