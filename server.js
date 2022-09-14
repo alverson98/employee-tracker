@@ -21,6 +21,7 @@ const menuSelect = () => {
   menuOptions({
     name: "menuChoice",
     type: "list",
+    message: "Please select one of the following actions:",
     choices: [
       "View Departments",
       "Add Department",
@@ -344,7 +345,7 @@ const updateRole = () => {
                       //updating employee role and manager
                       .then((updatedManagerId) => {
                         //if the updated role is manager - make manager_id null
-                        if (updatedManagerId[0][0] === null) {
+                        if (updatedManagerId[0][0] === undefined) {
                           db.promise().query(
                             `UPDATE employee SET role_id = ${updatedEmployeeData[1]}, manager_id = NULL WHERE first_name = "${updatedEmployeeData[0].employeeFirstName}"`
                           );
