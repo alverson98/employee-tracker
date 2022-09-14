@@ -147,28 +147,27 @@ const addRole = () => {
           type: "list",
           choices: departmentOptions,
         },
-      ])
-        .then((answers) => {
-          //getting the id for the department the new role belongs to
-          let departmentID = db
-            .promise()
-            .query(
-              `SELECT id FROM department WHERE name = ${answers.department}`
+      ]).then((answers) => {
+        //getting the id for the department the new role belongs to
+        db.promise()
+          .query(
+            `SELECT id FROM department WHERE name = "${answers.department}"`
+          )
+          .then((deptId) => {
+            const newRoleDeptId = deptId[0];
+            return [answers, newRoleDeptId];
+          })
+          .then((newRoleData) => {
+            //adding the new role to the role table
+            db.promise().query(
+              `INSERT INTO role(title, salary, department_id) VALUES ("${newRoleData[0].roleName}", ${newRoleData[0].roleSalary}, ${newRoleData[1][0].id})`
             );
+            console.log("New role added.");
 
-          //returning answers to the questions and the id data from the new role's department
-          return answers, departmentID;
-        })
-        .then((answers, departmentID) => {
-          //adding the new role to the role table
-          db.promise().query(
-            `INSERT INTO role(title, salary, department_id) VALUES ("${answers.roleName}", ${answers.roleSalary}, ${departmentID})`
-          );
-          console.log("New role added.");
-
-          //go back to the main menu options
-          menuSelect();
-        });
+            //go back to the main menu options
+            menuSelect();
+          });
+      });
     })
     .catch((err) => {
       console.log(err);
