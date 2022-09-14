@@ -241,7 +241,7 @@ const addEmployee = () => {
                 // getting id for the new employee's manager
                 db.promise()
                   .query(
-                    `SELECT id FROM employee WHERE first_name = "${newEmployeeData[0].employeeManger}"`
+                    `SELECT id FROM employee WHERE first_name = "${newEmployeeData[0].employeeManager}"`
                   )
                   .then((newEmployeeManagerId) => {
                     // if new employee is manager - make manager_id null
@@ -289,46 +289,78 @@ const updateRole = () => {
             (employee) => employee.first_name
           );
 
-          //returning array - [role title array, employee name array]
-          return [roleOptions, employeeOptions];
-        })
-        .then((employeeData) => {
-          //prompting user to answer questions to update the employee role
-          updateEmployeeQuestions([
-            {
-              name: "employeeFirstName",
-              message:
-                "What is the first name of the employee you would like to update?",
-              type: "list",
-              choices: employeeData[1],
-            },
-            {
-              name: "updatedRole",
-              message: "What is the new role of this employee?",
-              type: "list",
-              choices: employeeData[0],
-            },
-          ]).then((answers) => {
-            //getting id of the new role
-            db.promise()
-              .query(
-                `SELECT id FROM role WHERE title = "${answers.updatedRole}"`
-              )
-              .then((updatedRoleId) => {
-                //returning array - [user answers, id of new role]
-                return [answers, updatedRoleId[0][0].id];
-              })
+          //getting first names of all the managers
+          db.promise()
+            .query("SELECT first_name FROM employee where manager_id IS NULL")
+            .then((allManagers) => {
+              //creating array of all of the current managers
+              const managerOptions = allManagers[0].map(
+                (employee) => employee.first_name
+              );
 
-              .then((updatedEmployeeData) => {
-                db.promise().query(
-                  `UPDATE employee SET role_id = ${updatedEmployeeData[1]} WHERE first_name = "${updatedEmployeeData[0].employeeFirstName}"`
-                );
-                console.log("Employee role updated.");
+              //returning array - [role title array, employee name array, manager name array]
+              return [roleOptions, employeeOptions, managerOptions];
+            })
+            .then((employeeData) => {
+              //prompting user to answer questions to update the employee role
+              updateEmployeeQuestions([
+                {
+                  name: "employeeFirstName",
+                  message:
+                    "What is the first name of the employee you would like to update?",
+                  type: "list",
+                  choices: employeeData[1],
+                },
+                {
+                  name: "updatedRole",
+                  message: "What is the new role of this employee?",
+                  type: "list",
+                  choices: employeeData[0],
+                },
+                {
+                  name: "updatedManager",
+                  message:
+                    "Who is the employee's manager? (Select 'null' if the employee's new role is a manager).",
+                  type: "list",
+                  choices: [...employeeData[2], "null"],
+                },
+              ]).then((answers) => {
+                //getting id of the new role
+                db.promise()
+                  .query(
+                    `SELECT id FROM role WHERE title = "${answers.updatedRole}"`
+                  )
+                  .then((updatedRoleId) => {
+                    //returning array - [user answers, id of new role]
+                    return [answers, updatedRoleId[0][0].id];
+                  })
+                  .then((updatedEmployeeData) => {
+                    //getting id for the updated manager
+                    db.promise()
+                      .query(
+                        `SELECT id FROM employee WHERE first_name = "${updatedEmployeeData[0].updatedManager}"`
+                      )
+
+                      //updating employee role and manager
+                      .then((updatedManagerId) => {
+                        //if the updated role is manager - make manager_id null
+                        if (updatedManagerId[0][0] === null) {
+                          db.promise().query(
+                            `UPDATE employee SET role_id = ${updatedEmployeeData[1]}, manager_id = NULL WHERE first_name = "${updatedEmployeeData[0].employeeFirstName}"`
+                          );
+                        } else {
+                          db.promise().query(
+                            `UPDATE employee SET role_id = ${updatedEmployeeData[1]}, manager_id = ${updatedManagerId[0][0].id} WHERE first_name = "${updatedEmployeeData[0].employeeFirstName}"`
+                          );
+                        }
+                        console.log("Employee role updated.");
+                      });
+
+                    //go back to main menu options
+                    menuSelect();
+                  });
               });
-
-            //go back to main menu options
-            menuSelect();
-          });
+            });
         });
     })
     .catch((err) => {
