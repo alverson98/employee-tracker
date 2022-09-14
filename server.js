@@ -54,6 +54,7 @@ const menuSelect = () => {
         break;
       case "Update Employee Role":
         updateRole();
+        break;
       case "Done":
         process.exit(0);
     }
@@ -233,7 +234,6 @@ const addEmployee = () => {
                 `SELECT id FROM role WHERE title = "${answers.employeeRole}"`
               )
               .then((newEmployeeRoleId) => {
-                console.log(newEmployeeRoleId);
                 //returning an array - [user answers, new role id]
                 return [answers, newEmployeeRoleId[0][0].id];
               })
@@ -272,44 +272,64 @@ const addEmployee = () => {
 
 //updating employee role
 const updateRole = () => {
-  db.query("SELECT title FROM role")
+  const updateEmployeeQuestions = inquirer.createPromptModule();
+
+  db.promise()
+    .query("SELECT title FROM role")
     .then((roleTitles) => {
-      let firstName = db.query("SELECT first_name FROM employee");
-      return roleTitles, firstName;
-    })
-    .then((roleTitles, firstName) => {
-      const updateEmployeeQuestions = inquirer.createPromptModule();
+      //making array of only the role titles
+      const roleOptions = roleTitles[0].map((role) => role.title);
 
-      updateEmployeeQuestions([
-        {
-          name: "employeeFirstName",
-          message:
-            "What is the first name of the employee you would like to update?",
-          type: "list",
-          choices: firstName.first_name,
-        },
-        {
-          name: "updatedRole",
-          message: "What is the new role of this employee?",
-          type: "list",
-          choices: roleTitles.title,
-        },
-      ])
-        .then((answers) => {
-          const newRoleId = db.query(
-            `SELECT id FROM role WHERE title = "${answers.updatedRole}"`
+      //getting first names of all employees
+      db.promise()
+        .query("SELECT first_name FROM employee")
+        .then((allEmployees) => {
+          //creating array of only the employee's names
+          const employeeOptions = allEmployees[0].map(
+            (employee) => employee.first_name
           );
-          return answers, newRoleId;
+
+          //returning array - [role title array, employee name array]
+          return [roleOptions, employeeOptions];
         })
-        .then((answers, newRoleId) => {
-          db.query(
-            `UPDATE employee SET role_id = ${newRoleId.id} WHERE first_name = ${answers.employeeFirstName}`
-          );
-          console.log("Employee role updated.");
-        });
+        .then((employeeData) => {
+          //prompting user to answer questions to update the employee role
+          updateEmployeeQuestions([
+            {
+              name: "employeeFirstName",
+              message:
+                "What is the first name of the employee you would like to update?",
+              type: "list",
+              choices: employeeData[1],
+            },
+            {
+              name: "updatedRole",
+              message: "What is the new role of this employee?",
+              type: "list",
+              choices: employeeData[0],
+            },
+          ]).then((answers) => {
+            //getting id of the new role
+            db.promise()
+              .query(
+                `SELECT id FROM role WHERE title = "${answers.updatedRole}"`
+              )
+              .then((updatedRoleId) => {
+                //returning array - [user answers, id of new role]
+                return [answers, updatedRoleId[0][0].id];
+              })
 
-      //go back to main menu options
-      menuSelect();
+              .then((updatedEmployeeData) => {
+                db.promise().query(
+                  `UPDATE employee SET role_id = ${updatedEmployeeData[1]} WHERE first_name = "${updatedEmployeeData[0].employeeFirstName}"`
+                );
+                console.log("Employee role updated.");
+              });
+
+            //go back to main menu options
+            menuSelect();
+          });
+        });
     })
     .catch((err) => {
       console.log(err);
