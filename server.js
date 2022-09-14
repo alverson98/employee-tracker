@@ -125,7 +125,6 @@ const addRole = () => {
     .then((departmentNames) => {
       // above mysql query returns more than the name data array so - departmentNames[0]
       const departmentOptions = departmentNames[0].map((dept) => dept.name);
-      console.log(departmentOptions);
 
       const newRoleQuestions = inquirer.createPromptModule();
 
@@ -176,72 +175,84 @@ const addRole = () => {
 
 //adding employee
 const addEmployee = () => {
+  const newEmployeeQuestions = inquirer.createPromptModule();
+
   //getting all of the role titles
-  db.query("SELECT title FROM role")
+  db.promise()
+    .query("SELECT title FROM role")
     .then((roleTitles) => {
-      let managerNames = db.query(
-        "SELECT first_name FROM employee where manager_id IS NULL"
-      );
-      return roleTitles, managerNames;
-    })
-    .then((roleTitles, managerNames) => {
-      const newEmployeeQuestions = inquirer.createPromptModule();
+      //creating array of only the role titles
+      const roleOptions = roleTitles[0].map((role) => role.title);
 
-      newEmployeeQuestions(
-        {
-          name: "employeeFirstName",
-          message: "What is the first name of the new employee?",
-          type: "input",
-        },
-        {
-          name: "employeeLastName",
-          message: "What is the last name of the new employee?",
-          type: "input",
-        },
-        {
-          name: "employeeRole",
-          message: "What is the new employee's role?",
-          type: "list",
-          choices: roleTitles.title,
-        },
-        {
-          name: "employeeManager",
-          message:
-            "Who is the new employee's manager? (Select 'null' if the new employee is a manager).",
-          type: "list",
-          choices: [...managerNames.first_name, "null"],
-        }
-      );
-    })
-    .then((answers) => {
-      //getting the id for the new employee role
-      let roleID = db.query(
-        `SELECT id FROM role WHERE title = ${answers.employeeRole}`
-      );
+      db.promise()
+        .query("SELECT first_name FROM employee where manager_id IS NULL")
+        .then((allManagers) => {
+          //creating array of all of the current managers
+          const managerOptions = allManagers[0].map(
+            (employee) => employee.first_name
+          );
 
-      //returning answers to the questions and the id data from the role table
-      return answers, roleID;
-    })
-    .then((answers, roleID) => {
-      // getting id for the new employee's manager
-      let employeeManagerID = db.query(
-        `SELECT id FROM employee WHERE first_name = ${answers.employeeManager}`
-      );
+          return [roleOptions, managerOptions];
+        })
+        .then((choiceArray) => {
+          newEmployeeQuestions([
+            {
+              name: "employeeFirstName",
+              message: "What is the first name of the new employee?",
+              type: "input",
+            },
+            {
+              name: "employeeLastName",
+              message: "What is the last name of the new employee?",
+              type: "input",
+            },
+            {
+              name: "employeeRole",
+              message: "What is the new employee's role?",
+              type: "list",
+              choices: choiceArray[0],
+            },
+            {
+              name: "employeeManager",
+              message:
+                "Who is the new employee's manager? (Select 'null' if the new employee is a manager).",
+              type: "list",
+              choices: [...choiceArray[1], "null"],
+            },
+          ]).then((answers) => {
+            //getting the id for the new employee role
+            db.promise()
+              .query(
+                `SELECT id FROM role WHERE title = "${answers.employeeRole}"`
+              )
+              .then((newEmployeeRoleId) => {
+                return [answers, newEmployeeRoleId[0][0].id];
+              })
+              .then((newEmployeeData) => {
+                // getting id for the new employee's manager
+                db.promise()
+                  .query(
+                    `SELECT id FROM employee WHERE first_name = "${newEmployeeData[0].employeeManger}"`
+                  )
+                  .then((newEmployeeManagerId) => {
+                    // if new employee is manager - make manager_id null
+                    if (newEmployeeManagerId[0][0] === undefined) {
+                      db.promise().query(
+                        `INSERT INTO employee(first_name, last_name, role_id, manager_id) VALUES ("${newEmployeeData[0].employeeFirstName}", "${newEmployeeData[0].employeeLastName}", ${newEmployeeData[1]}, NULL)`
+                      );
+                    } else {
+                      db.promise().query(
+                        `INSERT INTO employee(first_name, last_name, role_id, manager_id) VALUES ("${newEmployeeData[0].employeeFirstName}", "${newEmployeeData[0].employeeLastName}", ${newEmployeeData[1]}, ${newEmployeeManagerId[0][0].id})`
+                      );
+                    }
+                    console.log("New employee added.");
 
-      // if new employee is manager - make manager_id null
-      if (answers.employeeManger === "null") {
-        db.query(
-          `INSERT INTO employee(first_name, last_name, role_id, manager_id) VALUES ("${answers.employeeFirstName}", "${answers.employeeLastName}", ${roleID}, null)`
-        );
-      } else {
-        db.query(
-          `INSERT INTO employee(first_name, last_name, role_id, manager_id) VALUES ("${answers.employeeFirstName}", "${answers.employeeLastName}", ${roleID}, ${employeeManagerID})`
-        );
-      }
-      console.log("New employee added.");
-
-      //go back to main menu options
-      menuSelect();
+                    //go back to main menu options
+                    menuSelect();
+                  });
+              });
+          });
+        });
     })
     .catch((err) => {
       console.log(err);
