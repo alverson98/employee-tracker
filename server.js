@@ -60,10 +60,9 @@ const menuSelect = () => {
   });
 };
 
-// QUERYING THE DATABASE: view requested table(s) & data
-
 // view department table
 const showDepartment = () =>
+  //showing id and name
   db.query("SELECT * FROM department", (err, results) => {
     console.table(results);
     menuSelect();
@@ -71,6 +70,7 @@ const showDepartment = () =>
 
 // view role table
 const showRole = () =>
+  //joining role & department table to show ... id, title, department, salary
   db.query(
     "SELECT role.id, role.title, department.name AS department, role.salary FROM role LEFT JOIN department ON role.department_id = department.id",
     (err, results) => {
@@ -81,6 +81,7 @@ const showRole = () =>
 
 // view employee table
 const showEmployee = () =>
+  //joining employee, role, & department tables to show ... id, first name, last name, title, department, salary, manager name
   db.query(
     "SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name AS department, role.salary AS salary, manager.first_name AS manager FROM employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id LEFT JOIN employee manager ON manager.id = employee.manager_id",
     (err, results) => {
@@ -92,9 +93,9 @@ const showEmployee = () =>
 // ADDING TABLE DATA:
 
 // adding department
-const addDepartment = async () => {
+const addDepartment = () => {
   const newDepartmentQuestions = inquirer.createPromptModule();
-
+  //prompting user to answer a question to add new department
   newDepartmentQuestions([
     {
       name: "departmentName",
@@ -119,7 +120,7 @@ const addDepartment = async () => {
 
 //adding role
 const addRole = () => {
-  //getting all of the department data
+  //getting all of the department name data
   db.promise()
     .query("SELECT name FROM department")
     .then((departmentNames) => {
@@ -153,7 +154,10 @@ const addRole = () => {
             `SELECT id FROM department WHERE name = "${answers.department}"`
           )
           .then((deptId) => {
+            //making array of only the id - [{id: }]
             const newRoleDeptId = deptId[0];
+
+            //returning an array - [user answers, id object array]
             return [answers, newRoleDeptId];
           })
           .then((newRoleData) => {
@@ -184,6 +188,7 @@ const addEmployee = () => {
       //creating array of only the role titles
       const roleOptions = roleTitles[0].map((role) => role.title);
 
+      //getting first names of all the managers
       db.promise()
         .query("SELECT first_name FROM employee where manager_id IS NULL")
         .then((allManagers) => {
@@ -192,9 +197,11 @@ const addEmployee = () => {
             (employee) => employee.first_name
           );
 
+          //returning an array - [array of role titles, array of manager names]
           return [roleOptions, managerOptions];
         })
         .then((choiceArray) => {
+          //prompting user with questions to add new employee
           newEmployeeQuestions([
             {
               name: "employeeFirstName",
@@ -220,12 +227,14 @@ const addEmployee = () => {
               choices: [...choiceArray[1], "null"],
             },
           ]).then((answers) => {
-            //getting the id for the new employee role
+            //getting the role id for the new employee role
             db.promise()
               .query(
                 `SELECT id FROM role WHERE title = "${answers.employeeRole}"`
               )
               .then((newEmployeeRoleId) => {
+                console.log(newEmployeeRoleId);
+                //returning an array - [user answers, new role id]
                 return [answers, newEmployeeRoleId[0][0].id];
               })
               .then((newEmployeeData) => {
