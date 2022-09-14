@@ -92,7 +92,7 @@ const showEmployee = () =>
 // ADDING TABLE DATA:
 
 // adding department
-const addDepartment = () => {
+const addDepartment = async () => {
   const newDepartmentQuestions = inquirer.createPromptModule();
 
   newDepartmentQuestions([
@@ -120,15 +120,20 @@ const addDepartment = () => {
 //adding role
 const addRole = () => {
   //getting all of the department data
-  db.query("SELECT name FROM department")
-    //prompting user with questions to create new role
+  db.promise()
+    .query("SELECT name FROM department")
     .then((departmentNames) => {
+      // above mysql query returns more than the name data array so - departmentNames[0]
+      const departmentOptions = departmentNames[0].map((dept) => dept.name);
+      console.log(departmentOptions);
+
       const newRoleQuestions = inquirer.createPromptModule();
 
+      //prompting user with questions to create new role
       newRoleQuestions([
         {
           name: "roleName",
-          message: "What is the name of the Role you would like to add?",
+          message: "What is the name of the role you would like to add?",
           type: "input",
         },
         {
@@ -140,28 +145,30 @@ const addRole = () => {
           name: "department",
           message: "What department does this new role belong to?",
           type: "list",
-          choices: departmentNames.name,
+          choices: departmentOptions,
         },
-      ]);
-    })
-    .then((answers) => {
-      //getting the id for the department the new role belongs to
-      let departmentID = db.query(
-        `SELECT id FROM department WHERE name = ${answers.department}`
-      );
+      ])
+        .then((answers) => {
+          //getting the id for the department the new role belongs to
+          let departmentID = db
+            .promise()
+            .query(
+              `SELECT id FROM department WHERE name = ${answers.department}`
+            );
 
-      //returning answers to the questions and the id data from the new role's department
-      return answers, departmentID;
-    })
-    .then((answers, departmentID) => {
-      //adding the new role to the role table
-      db.query(
-        `INSERT INTO role(title, salary, department_id) VALUES ("${answers.roleName}", ${answers.roleSalary}, ${departmentID})`
-      );
-      console.log("New role added.");
+          //returning answers to the questions and the id data from the new role's department
+          return answers, departmentID;
+        })
+        .then((answers, departmentID) => {
+          //adding the new role to the role table
+          db.promise().query(
+            `INSERT INTO role(title, salary, department_id) VALUES ("${answers.roleName}", ${answers.roleSalary}, ${departmentID})`
+          );
+          console.log("New role added.");
 
-      //go back to the main menu options
-      menuSelect();
+          //go back to the main menu options
+          menuSelect();
+        });
     })
     .catch((err) => {
       console.log(err);
