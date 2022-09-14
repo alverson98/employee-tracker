@@ -60,7 +60,7 @@ Currently, Employee Tracker has the following actions:
 
 Here is the application after initializing when asking user to choose an action:
 
-![Screenshot of app initialization](./assets/images/employee-tracker-app-intialization.jpeg)
+![Screenshot of menu action options](./assets/images/employee-tracker-app-intialization.jpeg)
 
 Here is an example of the data that can be accessed:
 
@@ -68,7 +68,9 @@ Here is an example of the data that can be accessed:
 
 ### Links
 
-Since this is a command line application, there is no deployed link.
+Since this is a command line application, but there is a walk through video demonstrating the functionality.
+
+[Link](https://youtu.be/sLKasCmIyi4) to walk through video.
 
 [Link](https://github.com/alverson98/employee-tracker) to code repository.
 
